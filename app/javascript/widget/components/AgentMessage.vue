@@ -69,6 +69,9 @@ export default {
     },
     agentName() {
       if (this.message.sender) {
+        if (this.shouldDisplayInboxIdentityForBot) {
+          return this.channelConfig.websiteName;
+        }
         return this.message.sender.available_name || this.message.sender.name;
       }
 
@@ -92,11 +95,19 @@ export default {
       }
 
       if (this.message.sender) {
+        if (this.shouldDisplayInboxIdentityForBot) {
+          return this.inboxAvatarUrl || displayImage;
+        }
         return this.message.sender.avatar_url;
       }
 
       return (
         this.message.additional_attributes?.sender_avatar_url || displayImage
+      );
+    },
+    shouldDisplayInboxIdentityForBot() {
+      return (
+        this.useInboxAvatarForBot && this.message.sender?.type === 'agent_bot'
       );
     },
     hasRecordedResponse() {

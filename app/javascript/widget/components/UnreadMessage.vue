@@ -53,6 +53,9 @@ export default {
         ? this.inboxAvatarUrl
         : '/assets/images/chatwoot_bot.png';
       if (this.isSenderExist(this.sender)) {
+        if (this.shouldDisplayInboxIdentityForBot) {
+          return this.inboxAvatarUrl || displayImage;
+        }
         const { avatar_url: avatarUrl } = this.sender;
         return avatarUrl;
       }
@@ -60,6 +63,9 @@ export default {
     },
     agentName() {
       if (this.isSenderExist(this.sender)) {
+        if (this.shouldDisplayInboxIdentityForBot) {
+          return this.channelConfig.websiteName;
+        }
         const { available_name: availableName } = this.sender;
         return availableName;
       }
@@ -70,10 +76,16 @@ export default {
     },
     availabilityStatus() {
       if (this.isSenderExist(this.sender)) {
+        if (this.shouldDisplayInboxIdentityForBot) {
+          return null;
+        }
         const { availability_status: availabilityStatus } = this.sender;
         return availabilityStatus;
       }
       return null;
+    },
+    shouldDisplayInboxIdentityForBot() {
+      return this.useInboxAvatarForBot && this.sender?.type === 'agent_bot';
     },
   },
   methods: {
