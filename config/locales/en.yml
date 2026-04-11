@@ -478,3 +478,25 @@ en:
       subject: 'Finish setting up %{custom_domain}'
     ssl_status:
       custom_domain_not_configured: 'Custom domain is not configured'
+  four_ay:
+    errors:
+      email_not_registered: This email was not found in our system. You cannot continue this chat.
+      lookup_failed: We could not verify your email right now. Please try again later.
+      lookup_url_not_configured: FourAY lookup is enabled but no API URL is configured. Please contact an administrator.
+      email_required_for_lookup: We need a verified email address to continue. Please verify your email first.
+  inbound_email_verification:
+    messages:
+      enter_email: 'Please enter your email address to verify and continue the chat.'
+      check_inbox: 'We sent a verification link to your email. Please check your inbox and open the link to continue.'
+    mailer:
+      subject: 'Verify your email to continue the conversation'
+      body_html: 'Hi %{name}, please verify your email address to continue your conversation with us.'
+      body_text: 'Hi %{name}, please verify your email address to continue your conversation with us. Open this link:'
+      link_text: 'Verify my email'
+      fallback_name: 'there'
+      expiry_note: 'This link expires in 24 hours.'
+    verify:
+      success: 'Your email has been verified. You can return to the chat and continue.'
+      invalid_or_expired: 'This verification link is invalid or has expired.'
+      contact_not_found: 'We could not find this contact.'
+      failed: 'Verification could not be completed. Please try again from the chat.'

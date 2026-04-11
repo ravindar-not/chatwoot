@@ -36,6 +36,10 @@ Rails.application.routes.draw do
   end
 
   get '/health', to: 'health#show'
+
+  # Inbound email verification (link from transactional email; non–web-widget inboxes)
+  get '/public/email_verifications/verify', to: 'public/email_verifications#show'
+  get '/public/whatsapp/verify_email', to: 'public/email_verifications#show'
   get '/api', to: 'api#index'
   namespace :api, defaults: { format: 'json' } do
     namespace :v1 do
