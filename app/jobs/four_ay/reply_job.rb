@@ -13,10 +13,11 @@ class FourAy::ReplyJob < ApplicationJob
     return unless FourAy::ChannelGuard.allowed?(message)
 
     conversation = message.conversation
-    resolution = FourAy::InboxAgentResolution.call(inbox: conversation.inbox, conversation: conversation)
+    inbox = conversation.inbox
+    resolution = FourAy::InboxAgentResolution.call(inbox: inbox, conversation: conversation)
 
     reply_text = nil
-    FourAy::TypingBroadcast.around_ai_reply(conversation) do
+    fetch_reply = lambda do
       reply_text = if resolution[:blocked]
                      resolution[:message]
                    else
@@ -26,6 +27,12 @@ class FourAy::ReplyJob < ApplicationJob
                        agent_id: resolution[:agent_id]
                      )
                    end
+    end
+
+    if inbox.web_widget?
+      FourAy::TypingBroadcast.around_ai_reply(conversation, &fetch_reply)
+    else
+      fetch_reply.call
     end
 
     return if reply_text.blank?

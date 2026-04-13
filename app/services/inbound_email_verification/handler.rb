@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 module InboundEmailVerification
+  # Web widget inboxes are never part of this flow (no verification email, no lookup).
   # Only when the inbox has +four_ay_db_verification_required+: prompts for email and sends a verify link
   # until contact custom_attributes['is_email_verified'] is true. Non–web-widget inboxes (WhatsApp, etc.).
   # The submitted email must return +found: true+ from +four_ay_lookup_api_url+ before a verification
@@ -16,6 +17,7 @@ module InboundEmailVerification
     end
 
     def perform
+      return if @message.inbox.web_widget?
       return unless @message.inbox.four_ay_db_verification_required?
       return unless feature_enabled?
       return unless applicable_incoming_message?

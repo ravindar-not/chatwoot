@@ -2,6 +2,7 @@
 
 module FourAy
   # Resolves which 4AY agent_id to use from inbox settings and optional external lookup by contact email (+ phone).
+  # Website widget inboxes never use external DB lookup; they always use the inbox +four_ay_agent_id+ only.
   class InboxAgentResolution
     class << self
       def call(inbox:, conversation:)
@@ -16,6 +17,8 @@ module FourAy
 
     # @return [Hash] :agent_id (String or nil), or :blocked with :message when the AI reply must be skipped
     def call
+      return { agent_id: inbox.four_ay_agent_id.to_s.presence } if inbox.web_widget?
+
       if inbox.four_ay_db_verification_required?
         resolve_via_lookup
       else

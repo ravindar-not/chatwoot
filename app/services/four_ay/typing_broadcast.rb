@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-# Broadcasts widget typing indicator while waiting for the 4AY API (uses ActionCable, same as agent typing).
+# Broadcasts the website widget typing indicator while waiting for the FourAY API (ActionCable; widget-only).
 module FourAy
   class TypingBroadcast
     class << self

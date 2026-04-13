@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
-# Enqueues a 4AY reply for web widget, or non-widget channels when allowed by FourAy::ChannelGuard
-# (no email gate unless the inbox requires database verification).
+# Enqueues a 4AY reply for website widget (built-in typing) or other channels when allowed by FourAy::ChannelGuard.
+# Widget skips verification mail and external agent-id lookup; WhatsApp uses Meta typing from webhooks.
 class FourAyListener < BaseListener
   def message_created(event)
     message = extract_message_and_account(event)[0]

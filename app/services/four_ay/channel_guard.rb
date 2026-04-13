@@ -1,9 +1,10 @@
 # frozen_string_literal: true
 
 module FourAy
-  # Widget: always. Other channels: require a +Contact+ sender. If the inbox does not require database
-  # verification, allow the AI without email verification. If it does, inbound email verification must be
-  # enabled globally and the contact must be email-verified.
+  # Website widget: always allowed for FourAY (no email verification mail, no external agent lookup).
+  # Other channels: require a +Contact+ sender. If the inbox does not require database verification,
+  # allow the AI without email verification. If it does, inbound email verification must be enabled
+  # globally and the contact must be email-verified.
   module ChannelGuard
     class << self
       def allowed?(message)

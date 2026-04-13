@@ -2,6 +2,7 @@
 
 module Whatsapp
   # Meta WhatsApp Cloud API: mark the customer's message read and show the typing bubble until you send a reply.
+  # Website widget and non-WhatsApp channels are ignored (+usable_incoming?+).
   # Triggered from +Whatsapp::IncomingMessageBaseService+ as soon as an inbound message is persisted (earliest UX).
   # https://developers.facebook.com/docs/whatsapp/cloud-api/typing-indicators/
   module MetaTyping
@@ -17,6 +18,7 @@ module Whatsapp
 
       def usable_incoming?(message)
         return false unless message&.incoming?
+        return false if message.inbox&.web_widget?
         return false unless message.inbox&.whatsapp?
 
         channel = message.inbox.channel
