@@ -19,6 +19,15 @@ json.allow_messages_after_resolved resource.allow_messages_after_resolved
 json.lock_to_single_conversation resource.lock_to_single_conversation
 json.sender_name_type resource.sender_name_type
 json.business_name resource.business_name
+json.four_ay_agent_id resource.four_ay_agent_id
+json.four_ay_lookup_api_url resource.four_ay_lookup_api_url
+json.four_ay_db_verification_required resource.four_ay_db_verification_required
+
+ec = resource.email_configuration
+json.email_configuration do
+  json.mail_from ec&.mail_from
+  json.mail_subject ec&.mail_subject
+end
 
 if resource.portal.present?
   json.help_center do

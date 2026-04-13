@@ -1,0 +1,14 @@
+<% display_name = @contact.name.presence || t('inbound_email_verification.mailer.fallback_name') %>
+<%= t('inbound_email_verification.mailer.greeting_text', name: display_name) %>
+
+<%= t('inbound_email_verification.mailer.purpose_text', email: @email) %>
+
+<%= t('inbound_email_verification.mailer.phone_text', phone_number: @phone_display) %>
+
+<%= t('inbound_email_verification.mailer.security_text') %>
+
+<%= @verify_url %>
+
+<%= t('inbound_email_verification.mailer.link_text') %> (open in browser)
+
+<%= t('inbound_email_verification.mailer.expiry_note_text') %>

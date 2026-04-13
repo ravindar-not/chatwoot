@@ -1,16 +1,17 @@
 # frozen_string_literal: true
 
-# Enqueues a 4AY reply when visitors send text messages via the web widget.
+# Enqueues a 4AY reply for web widget, or non-widget channels when allowed by FourAy::ChannelGuard
+# (no email gate unless the inbox requires database verification).
 class FourAyListener < BaseListener
   def message_created(event)
     message = extract_message_and_account(event)[0]
     return unless four_ay_enabled?
     return unless message.incoming?
     return if message.private?
-    return unless message.inbox.web_widget?
     return unless message.content_type == 'text'
     return if message.content.blank?
     return if agent_bot_webhook_configured?(message.inbox)
+    return unless FourAy::ChannelGuard.allowed?(message)
 
     FourAy::ReplyJob.perform_later(message.id)
   end

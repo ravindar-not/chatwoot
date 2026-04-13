@@ -21,6 +21,7 @@ import PreChatFormSettings from './PreChatForm/Settings.vue';
 import WeeklyAvailability from './components/WeeklyAvailability.vue';
 import GreetingsEditor from 'shared/components/GreetingsEditor.vue';
 import ConfigurationPage from './settingsPage/ConfigurationPage.vue';
+import EmailConfigurationPage from './settingsPage/EmailConfigurationPage.vue';
 import CustomerSatisfactionPage from './settingsPage/CustomerSatisfactionPage.vue';
 import CollaboratorsPage from './settingsPage/CollaboratorsPage.vue';
 import BotConfiguration from './components/BotConfiguration.vue';
@@ -44,6 +45,7 @@ export default {
     BotConfiguration,
     CollaboratorsPage,
     ConfigurationPage,
+    EmailConfigurationPage,
     CustomerSatisfactionPage,
     FacebookReauthorize,
     GreetingsEditor,
@@ -137,6 +139,10 @@ export default {
           name: this.$t('INBOX_MGMT.TABS.SETTINGS'),
         },
         {
+          key: 'email-configuration',
+          name: this.$t('INBOX_MGMT.TABS.EMAIL_CONFIGURATION'),
+        },
+        {
           key: 'collaborators',
           name: this.$t('INBOX_MGMT.TABS.COLLABORATORS'),
         },
@@ -218,7 +224,7 @@ export default {
       return getInboxIconByType(type, medium, 'line');
     },
     bannerMaxWidth() {
-      const narrowTabs = ['collaborators', 'bot-configuration'];
+      const narrowTabs = ['collaborators', 'bot-configuration', 'email-configuration'];
       const wideIfWebWidget = ['configuration', 'inbox-settings'];
       if (narrowTabs.includes(this.selectedTabKey)) return 'max-w-4xl';
       if (wideIfWebWidget.includes(this.selectedTabKey)) {
@@ -1162,6 +1168,12 @@ export default {
 
         <div v-if="selectedTabKey === 'collaborators'" class="mx-6 max-w-4xl">
           <CollaboratorsPage :inbox="inbox" />
+        </div>
+        <div
+          v-if="selectedTabKey === 'email-configuration'"
+          class="mx-6 max-w-4xl"
+        >
+          <EmailConfigurationPage :inbox="inbox" />
         </div>
         <div
           v-if="selectedTabKey === 'configuration'"

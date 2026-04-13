@@ -48,6 +48,10 @@ class Inboxes extends CacheEnabledApiClient {
       template,
     });
   }
+
+  updateEmailConfiguration(inboxId, payload) {
+    return axios.patch(`${this.url}/${inboxId}/email_configuration`, payload);
+  }
 }
 
 export default new Inboxes();

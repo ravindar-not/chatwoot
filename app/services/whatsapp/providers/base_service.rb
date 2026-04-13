@@ -9,6 +9,13 @@
 ######################################
 
 class Whatsapp::Providers::BaseService
+  # https://developers.facebook.com/docs/whatsapp/cloud-api/messages/text-messages/
+  TEXT_MESSAGE_MAX_CHARS = 4096
+  # https://developers.facebook.com/docs/whatsapp/cloud-api/messages/interactive-*-messages/
+  INTERACTIVE_BODY_MAX_CHARS = 1024
+  # Caption on image / video / document messages
+  MEDIA_CAPTION_MAX_CHARS = 1024
+
   pattr_initialize [:whatsapp_channel!]
 
   def send_message(_phone_number, _message)
@@ -93,7 +100,7 @@ class Whatsapp::Providers::BaseService
   def create_button_payload(message)
     buttons = create_buttons(message.content_attributes['items'])
     json_hash = { 'buttons' => buttons }
-    create_payload('button', message.outgoing_content, JSON.generate(json_hash))
+    create_payload('button', truncate_for_interactive_body(message), JSON.generate(json_hash))
   end
 
   def create_list_payload(message)
@@ -101,6 +108,18 @@ class Whatsapp::Providers::BaseService
     section1 = { 'rows' => rows }
     sections = [section1]
     json_hash = { :button => I18n.t('conversations.messages.whatsapp.list_button_label'), 'sections' => sections }
-    create_payload('list', message.outgoing_content, JSON.generate(json_hash))
+    create_payload('list', truncate_for_interactive_body(message), JSON.generate(json_hash))
+  end
+
+  def truncate_for_plain_text(message)
+    message.outgoing_content.to_s.truncate(TEXT_MESSAGE_MAX_CHARS, omission: '…')
+  end
+
+  def truncate_for_interactive_body(message)
+    message.outgoing_content.to_s.truncate(INTERACTIVE_BODY_MAX_CHARS, omission: '…')
+  end
+
+  def truncate_for_media_caption(message)
+    message.outgoing_content.to_s.truncate(MEDIA_CAPTION_MAX_CHARS, omission: '…')
   end
 end

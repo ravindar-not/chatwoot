@@ -81,6 +81,13 @@ class AutomationRuleListener < BaseListener
 
   def ignore_message_created_event?(event)
     message = event.data[:message]
-    performed_by_automation?(event) || message.activity? || message.auto_reply_email?
+    performed_by_automation?(event) || message.activity? || message.auto_reply_email? ||
+      email_verification_system_message?(message)
+  end
+
+  def email_verification_system_message?(message)
+    attrs = message.content_attributes
+    flag = attrs['email_verification_system'] || attrs['whatsapp_email_verification']
+    [true, 'true'].include?(flag)
   end
 end

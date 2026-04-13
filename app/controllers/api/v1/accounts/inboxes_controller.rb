@@ -9,7 +9,8 @@ class Api::V1::Accounts::InboxesController < Api::V1::Accounts::BaseController
   include Api::V1::Accounts::Concerns::WhatsappHealthManagement
 
   def index
-    @inboxes = policy_scope(Current.account.inboxes.order_by_name.includes(:channel, { avatar_attachment: [:blob] }))
+    @inboxes = policy_scope(Current.account.inboxes.order_by_name.includes(:channel, :email_configuration,
+                                                                                    { avatar_attachment: [:blob] }))
   end
 
   def show; end
@@ -74,7 +75,7 @@ class Api::V1::Accounts::InboxesController < Api::V1::Accounts::BaseController
   private
 
   def fetch_inbox
-    @inbox = Current.account.inboxes.find(params[:id])
+    @inbox = Current.account.inboxes.includes(:email_configuration).find(params[:id])
     authorize @inbox, :show?
   end
 
@@ -150,6 +151,7 @@ class Api::V1::Accounts::InboxesController < Api::V1::Accounts::BaseController
 
   def inbox_attributes
     [:name, :avatar, :greeting_enabled, :greeting_message, :enable_email_collect, :csat_survey_enabled,
+     :four_ay_agent_id, :four_ay_lookup_api_url, :four_ay_db_verification_required,
      :enable_auto_assignment, :working_hours_enabled, :out_of_office_message, :timezone, :allow_messages_after_resolved,
      :lock_to_single_conversation, :portal_id, :sender_name_type, :business_name,
      { csat_config: [:display_type, :message, :button_text, :language,

@@ -1,4 +1,33 @@
 class Whatsapp::Providers::WhatsappCloudService < Whatsapp::Providers::BaseService
+  # Meta Cloud API: mark inbound message read and show typing until reply or ~25s.
+  # https://developers.facebook.com/docs/whatsapp/cloud-api/typing-indicators/
+  def send_typing_indicator(whatsapp_message_id)
+    return false if whatsapp_message_id.blank?
+
+    request_body = {
+      messaging_product: 'whatsapp',
+      status: 'read',
+      message_id: whatsapp_message_id.to_s,
+      typing_indicator: {
+        type: 'text'
+      }
+    }
+
+    response = HTTParty.post(
+      "#{phone_id_path}/messages",
+      headers: api_headers,
+      body: request_body.to_json
+    )
+
+    unless response.success?
+      Rails.logger.warn(
+        "WhatsappCloudService#send_typing_indicator failed: HTTP #{response.code} #{response.body.to_s[0..500]}"
+      )
+    end
+
+    response.success?
+  end
+
   def send_message(phone_number, message)
     @message = message
 
@@ -106,7 +135,7 @@ class Whatsapp::Providers::WhatsappCloudService < Whatsapp::Providers::BaseServi
         messaging_product: 'whatsapp',
         context: whatsapp_reply_context(message),
         to: phone_number,
-        text: { body: message.outgoing_content },
+        text: { body: truncate_for_plain_text(message) },
         type: 'text'
       }.to_json
     )
@@ -120,7 +149,7 @@ class Whatsapp::Providers::WhatsappCloudService < Whatsapp::Providers::BaseServi
     type_content = {
       'link': attachment.download_url
     }
-    type_content['caption'] = message.outgoing_content unless %w[audio sticker].include?(type)
+    type_content['caption'] = truncate_for_media_caption(message) unless %w[audio sticker].include?(type)
     type_content['filename'] = attachment.file.filename if type == 'document'
     response = HTTParty.post(
       "#{phone_id_path}/messages",

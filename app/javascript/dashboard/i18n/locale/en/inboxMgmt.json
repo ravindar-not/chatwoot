@@ -620,6 +620,7 @@
     },
     "TABS": {
       "SETTINGS": "Settings",
+      "EMAIL_CONFIGURATION": "Email",
       "COLLABORATORS": "Collaborators",
       "CONFIGURATION": "Configuration",
       "CAMPAIGN": "Campaigns",
@@ -629,6 +630,15 @@
       "BOT_CONFIGURATION": "Bot Configuration",
       "ACCOUNT_HEALTH": "Account Health",
       "CSAT": "CSAT"
+    },
+    "EMAIL_CONFIGURATION": {
+      "DESCRIPTION": "Override sender and subject for automated emails tied to this inbox (for example, inbound verification links). Leave blank to use installation defaults. Message body uses the standard template until a custom body is supported.",
+      "MAIL_FROM_LABEL": "From",
+      "MAIL_FROM_HELP": "Full sender, e.g. Acme Support <noreply@example.com>. Must be allowed by your mail provider.",
+      "MAIL_FROM_PLACEHOLDER": "Brand <email@example.com>",
+      "MAIL_SUBJECT_LABEL": "Subject",
+      "MAIL_SUBJECT_HELP": "Subject line for verification and similar emails from this inbox.",
+      "MAIL_SUBJECT_PLACEHOLDER": "Verify your email to continue the conversation"
     },
     "CHANNEL_PREFERENCES": "Channel Preferences",
     "WIDGET_FEATURES": "Widget features",
@@ -781,7 +791,18 @@
       "WHATSAPP_TEMPLATES_SYNC_SUBHEADER": "Manually sync message templates from WhatsApp to update your available templates.",
       "WHATSAPP_TEMPLATES_SYNC_BUTTON": "Sync Templates",
       "WHATSAPP_TEMPLATES_SYNC_SUCCESS": "Templates sync initiated successfully. It may take a couple of minutes to update.",
-      "UPDATE_PRE_CHAT_FORM_SETTINGS": "Update Pre Chat Form Settings"
+      "UPDATE_PRE_CHAT_FORM_SETTINGS": "Update Pre Chat Form Settings",
+      "FOUR_AY": {
+        "TITLE": "FourAY agent",
+        "AGENT_ID_LABEL": "Agent ID",
+        "AGENT_ID_HELP": "Used when database verification is off. This agent receives customer messages via FourAY.",
+        "AGENT_ID_PLACEHOLDER": "e.g. 26",
+        "LOOKUP_URL_LABEL": "Agent lookup API URL",
+        "LOOKUP_URL_HELP": "Full URL (including path) that accepts POST JSON {\"email\":\"...\",\"phone_number\":\"+...\"} (phone in E.164 when known) and returns {\"found\":true,\"four_ay_agent_id\":\"...\"}. Uses Authorization: Bearer from AGENT_ID_ACCESS_TOKEN. When database verification is enabled, this is called when the contact submits an email (before a verification link is sent) and again after the email is verified to resolve the AI agent.",
+        "LOOKUP_URL_PLACEHOLDER": "https://api.example.com/chatwoot/four_ay_agent_id",
+        "DB_VERIFICATION_LABEL": "Resolve agent from database (API lookup)",
+        "DB_VERIFICATION_HELP": "When enabled, Chatwoot calls the lookup URL with the verified contact email. If the user is not found, the AI will not run and the contact sees an error message instead."
+      }
     },
     "HELP_CENTER": {
       "LABEL": "Help Center",

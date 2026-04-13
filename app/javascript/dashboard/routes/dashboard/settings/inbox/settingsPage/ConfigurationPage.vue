@@ -44,6 +44,10 @@ export default {
       allowedDomains: '',
       isUpdatingAllowedDomains: false,
       isSettingDefaults: false,
+      fourAyAgentId: '',
+      fourAyLookupApiUrl: '',
+      fourAyDbVerificationRequired: false,
+      isUpdatingFourAy: false,
     };
   },
   validations: {
@@ -83,6 +87,9 @@ export default {
         this.inbox.selected_feature_flags || []
       ).includes('allow_mobile_webview');
       this.allowedDomains = this.inbox.allowed_domains || '';
+      this.fourAyAgentId = this.inbox.four_ay_agent_id || '';
+      this.fourAyLookupApiUrl = this.inbox.four_ay_lookup_api_url || '';
+      this.fourAyDbVerificationRequired = !!this.inbox.four_ay_db_verification_required;
       this.$nextTick(() => {
         this.isSettingDefaults = false;
       });
@@ -182,6 +189,23 @@ export default {
         useAlert(this.$t('INBOX_MGMT.EDIT.API.ERROR_MESSAGE'));
       } finally {
         this.isSyncingTemplates = false;
+      }
+    },
+    async updateFourAySettings() {
+      this.isUpdatingFourAy = true;
+      try {
+        await this.$store.dispatch('inboxes/updateInbox', {
+          id: this.inbox.id,
+          formData: false,
+          four_ay_agent_id: this.fourAyAgentId || null,
+          four_ay_lookup_api_url: this.fourAyLookupApiUrl || null,
+          four_ay_db_verification_required: this.fourAyDbVerificationRequired,
+        });
+        useAlert(this.$t('INBOX_MGMT.EDIT.API.SUCCESS_MESSAGE'));
+      } catch (error) {
+        useAlert(this.$t('INBOX_MGMT.EDIT.API.ERROR_MESSAGE'));
+      } finally {
+        this.isUpdatingFourAy = false;
       }
     },
   },
@@ -460,6 +484,53 @@ export default {
       class="hidden"
     />
   </div>
+
+  <SettingsAccordion
+    :title="$t('INBOX_MGMT.SETTINGS_POPUP.FOUR_AY.TITLE')"
+    class="mt-6"
+  >
+    <SettingsFieldSection
+      :label="$t('INBOX_MGMT.SETTINGS_POPUP.FOUR_AY.AGENT_ID_LABEL')"
+      :help-text="$t('INBOX_MGMT.SETTINGS_POPUP.FOUR_AY.AGENT_ID_HELP')"
+    >
+      <woot-input
+        v-model="fourAyAgentId"
+        type="text"
+        class="w-full [&>input]:!mb-0"
+        :placeholder="
+          $t('INBOX_MGMT.SETTINGS_POPUP.FOUR_AY.AGENT_ID_PLACEHOLDER')
+        "
+      />
+    </SettingsFieldSection>
+    <SettingsFieldSection
+      :label="$t('INBOX_MGMT.SETTINGS_POPUP.FOUR_AY.LOOKUP_URL_LABEL')"
+      :help-text="$t('INBOX_MGMT.SETTINGS_POPUP.FOUR_AY.LOOKUP_URL_HELP')"
+    >
+      <TextArea
+        v-model="fourAyLookupApiUrl"
+        :placeholder="
+          $t('INBOX_MGMT.SETTINGS_POPUP.FOUR_AY.LOOKUP_URL_PLACEHOLDER')
+        "
+        auto-height
+        resize
+        class="w-full [&>div]:!bg-transparent [&>div]:!border-none [&>div]:!border-0 [&>div]:px-0 [&>div]:pb-0 [&>div]:pt-0"
+      />
+    </SettingsFieldSection>
+    <SettingsToggleSection
+      v-model="fourAyDbVerificationRequired"
+      :header="$t('INBOX_MGMT.SETTINGS_POPUP.FOUR_AY.DB_VERIFICATION_LABEL')"
+      :description="
+        $t('INBOX_MGMT.SETTINGS_POPUP.FOUR_AY.DB_VERIFICATION_HELP')
+      "
+    />
+    <div class="mt-3 flex justify-end">
+      <NextButton
+        :is-loading="isUpdatingFourAy"
+        :label="$t('INBOX_MGMT.SETTINGS_POPUP.UPDATE')"
+        @click="updateFourAySettings"
+      />
+    </div>
+  </SettingsAccordion>
 </template>
 
 <style lang="scss" scoped>

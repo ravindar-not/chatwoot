@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta content="text/html; charset=UTF-8" http-equiv="Content-Type" />
+  </head>
+  <body>
+    <% display_name = @contact.name.presence || t('inbound_email_verification.mailer.fallback_name') %>
+    <p><%= t('inbound_email_verification.mailer.greeting_html', name: h(display_name)) %></p>
+    <p><%= t('inbound_email_verification.mailer.purpose_html', email: h(@email)).html_safe %></p>
+    <p><%= t('inbound_email_verification.mailer.phone_html', phone_number: h(@phone_display)).html_safe %></p>
+    <p><%= t('inbound_email_verification.mailer.security_html') %></p>
+    <p><a href="<%= @verify_url %>"><%= t('inbound_email_verification.mailer.link_text') %></a></p>
+    <p><%= t('inbound_email_verification.mailer.expiry_note_html').html_safe %></p>
+  </body>
+</html>

@@ -42,6 +42,15 @@ class Whatsapp::IncomingMessageBaseService
       set_conversation
       create_messages
     end
+
+    maybe_send_whatsapp_typing_for_inbound
+  end
+
+  def maybe_send_whatsapp_typing_for_inbound
+    return if outgoing_echo
+    return unless @message&.incoming? && @message.persisted?
+
+    Whatsapp::MetaTyping.maybe_send_for_incoming_message(@message)
   end
 
   def process_statuses

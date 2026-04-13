@@ -63,7 +63,7 @@ class Whatsapp::Providers::Whatsapp360DialogService < Whatsapp::Providers::BaseS
       headers: api_headers,
       body: {
         to: phone_number,
-        text: { body: message.outgoing_content },
+        text: { body: truncate_for_plain_text(message) },
         type: 'text'
       }.to_json
     )
@@ -77,7 +77,7 @@ class Whatsapp::Providers::Whatsapp360DialogService < Whatsapp::Providers::BaseS
     type_content = {
       'link': attachment.download_url
     }
-    type_content['caption'] = message.outgoing_content unless %w[audio sticker].include?(type)
+    type_content['caption'] = truncate_for_media_caption(message) unless %w[audio sticker].include?(type)
     type_content['filename'] = attachment.file.filename if type == 'document'
 
     response = HTTParty.post(
