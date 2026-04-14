@@ -35,7 +35,7 @@ export const actions = {
     const message = createTemporaryMessage({ content, replyTo });
     dispatch('sendMessageWithData', message);
   },
-  sendMessageWithData: async ({ commit }, message) => {
+  sendMessageWithData: async ({ commit, dispatch }, message) => {
     const { id, content, replyTo, meta = {} } = message;
 
     commit('pushMessageToConversation', message);
@@ -46,6 +46,7 @@ export const actions = {
       // [VITE] Don't delete this manually, since `pushMessageToConversation` does the replacement for us anyway
       // commit('deleteMessage', message.id);
       commit('pushMessageToConversation', { ...data, status: 'sent' });
+      await dispatch('conversationAttributes/getAttributes', {}, { root: true });
     } catch (error) {
       commit('pushMessageToConversation', { ...message, status: 'failed' });
       commit('updateMessageMeta', {
@@ -59,7 +60,7 @@ export const actions = {
     commit('setLastMessageId');
   },
 
-  sendAttachment: async ({ commit }, params) => {
+  sendAttachment: async ({ commit, dispatch }, params) => {
     const {
       attachment: { thumbUrl, fileType },
       meta = {},
@@ -82,6 +83,7 @@ export const actions = {
         tempId: tempMessage.id,
       });
       commit('pushMessageToConversation', { ...data, status: 'sent' });
+      await dispatch('conversationAttributes/getAttributes', {}, { root: true });
     } catch (error) {
       commit('pushMessageToConversation', { ...tempMessage, status: 'failed' });
       commit('updateMessageMeta', {

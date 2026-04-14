@@ -106,10 +106,19 @@ class ActionCableConnector extends BaseActionCableConnector {
     const activeConversationId =
       this.app.$store.getters['conversationAttributes/getConversationParams']
         .id;
-    const isUserTypingOnAnotherConversation =
-      data.conversation && data.conversation.id !== activeConversationId;
+    const eventConversationId = data.conversation?.id;
+    // Before getAttributes/sync, active id can be empty; do not treat as "other conv"
+    // (otherwise first typing_on is dropped: e.g. 35 !== '').
+    const hasSyncedActiveId =
+      activeConversationId !== null &&
+      activeConversationId !== undefined &&
+      activeConversationId !== '';
+    const isTypingForDifferentConversation =
+      hasSyncedActiveId &&
+      eventConversationId != null &&
+      String(eventConversationId) !== String(activeConversationId);
 
-    if (isUserTypingOnAnotherConversation || data.is_private) {
+    if (isTypingForDifferentConversation || data.is_private) {
       return;
     }
     this.clearTimer();

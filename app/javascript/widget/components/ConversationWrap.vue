@@ -46,13 +46,13 @@ export default {
     },
     showStatusIndicator() {
       const { status } = this.conversationAttributes;
-      const isConversationInPendingStatus = status === 'pending';
       const isLastMessageIncoming =
         this.lastMessage.message_type === MESSAGE_TYPE.INCOMING;
-      return (
-        this.isAgentTyping ||
-        (isConversationInPendingStatus && isLastMessageIncoming)
-      );
+      // Web widget conversations are usually `open` (not only `pending`) while waiting for a reply.
+      const isWaitingForAgentReply =
+        isLastMessageIncoming &&
+        (status === 'pending' || status === 'open');
+      return this.isAgentTyping || isWaitingForAgentReply;
     },
   },
   watch: {
