@@ -1,26 +1,19 @@
 <script setup>
-import { ref, computed } from 'vue';
-import { useI18n } from 'vue-i18n';
+import { ref } from 'vue';
 import ResizableTextArea from 'shared/components/ResizableTextArea.vue';
-import Avatar from 'next/avatar/Avatar.vue';
 import FluentIcon from 'shared/components/FluentIcon/Index.vue';
+import { useMessageFormatter } from 'shared/composables/useMessageFormatter';
 
-const props = defineProps({
+defineProps({
   config: {
     type: Object,
     default: () => ({}),
   },
 });
 
-const { t } = useI18n();
+const { formatMessage } = useMessageFormatter();
 
 const isInputFocused = ref(false);
-
-const getStatusText = computed(() => {
-  return props.config.isOnline
-    ? t('INBOX_MGMT.WIDGET_BUILDER.BODY.TEAM_AVAILABILITY.ONLINE')
-    : t('INBOX_MGMT.WIDGET_BUILDER.BODY.TEAM_AVAILABILITY.OFFLINE');
-});
 </script>
 
 <template>
@@ -32,15 +25,11 @@ const getStatusText = computed(() => {
       <div class="flex items-center justify-between">
         <div>
           <div
-            class="text-sm font-medium leading-4 text-n-slate-12 dark:text-n-slate-50"
-          >
-            {{ getStatusText }}
-          </div>
-          <div class="mt-1 text-xs text-n-slate-11">
-            {{ config.replyTime }}
-          </div>
+            v-if="config.welcomeTagline"
+            class="text-xs text-n-slate-11 pr-2"
+            v-dompurify-html="formatMessage(config.welcomeTagline)"
+          />
         </div>
-        <Avatar name="C" :size="34" rounded-full />
       </div>
       <button
         v-if="config.isDefaultScreen"

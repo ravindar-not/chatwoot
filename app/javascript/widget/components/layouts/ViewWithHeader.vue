@@ -24,7 +24,6 @@ export default {
   computed: {
     ...mapGetters({
       appConfig: 'appConfig/getAppConfig',
-      availableAgents: 'agent/availableAgents',
     }),
     portal() {
       return window.chatwootWebChannel.portal;
@@ -40,10 +39,10 @@ export default {
         this.channelConfig.welcomeTitle || this.channelConfig.welcomeTagline
       );
     },
+    // Only help center article viewer needs back (to home / article list). Chat and
+    // pre-chat never navigate "back" to a start-conversation screen.
     showBackButton() {
-      return ['article-viewer', 'messages', 'prechat-form'].includes(
-        this.$route.name
-      );
+      return this.$route.name === 'article-viewer';
     },
     isOnArticleViewer() {
       return ['article-viewer'].includes(this.$route.name);
@@ -128,8 +127,8 @@ export default {
           :title="channelConfig.websiteName"
           :avatar-url="channelConfig.avatarUrl"
           :show-popout-button="appConfig.showPopoutButton"
-          :available-agents="availableAgents"
           :show-back-button="showBackButton"
+          :static-subtitle="channelConfig.welcomeTagline"
         />
       </div>
       <Banner />

@@ -138,15 +138,19 @@ export default {
           key: 'inbox-settings',
           name: this.$t('INBOX_MGMT.TABS.SETTINGS'),
         },
-        {
+      ];
+
+      if (!this.isAWebWidgetInbox) {
+        visibleToAllChannelTabs.push({
           key: 'email-configuration',
           name: this.$t('INBOX_MGMT.TABS.EMAIL_CONFIGURATION'),
-        },
-        {
-          key: 'collaborators',
-          name: this.$t('INBOX_MGMT.TABS.COLLABORATORS'),
-        },
-      ];
+        });
+      }
+
+      visibleToAllChannelTabs.push({
+        key: 'collaborators',
+        name: this.$t('INBOX_MGMT.TABS.COLLABORATORS'),
+      });
 
       if (!this.isAVoiceChannel) {
         visibleToAllChannelTabs = [
@@ -1154,8 +1158,6 @@ export default {
                 :welcome-tagline="channelWelcomeTagline"
                 :website-name="selectedInboxName"
                 :logo="avatarUrl"
-                is-online
-                :reply-time="replyTime"
                 :color="inbox.widget_color"
                 :widget-bubble-position="widgetBubblePosition"
                 :widget-bubble-launcher-title="widgetBubbleLauncherTitle"

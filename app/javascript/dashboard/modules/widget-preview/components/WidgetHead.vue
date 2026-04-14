@@ -43,14 +43,12 @@ const isDefaultScreen = computed(() => {
             <span class="text-base font-medium leading-3 text-n-slate-12">
               {{ config.websiteName }}
             </span>
-            <div
-              v-if="config.isOnline"
-              class="w-2 h-2 bg-n-teal-10 rounded-full"
-            />
           </div>
-          <span class="mt-1 text-xs text-n-slate-11">
-            {{ config.replyTime }}
-          </span>
+          <p
+            v-if="config.welcomeTagline"
+            v-dompurify-html="formatMessage(config.welcomeTagline)"
+            class="mt-1 text-xs text-n-slate-11 [&_a]:underline line-clamp-3"
+          />
         </div>
       </div>
       <div v-if="isDefaultScreen" class="overflow-auto max-h-60">

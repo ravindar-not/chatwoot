@@ -486,6 +486,7 @@ export default {
   </div>
 
   <SettingsAccordion
+    v-if="!isAWebWidgetInbox"
     :title="$t('INBOX_MGMT.SETTINGS_POPUP.FOUR_AY.TITLE')"
     class="mt-6"
   >

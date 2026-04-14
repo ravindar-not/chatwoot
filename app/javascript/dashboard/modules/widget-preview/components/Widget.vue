@@ -28,14 +28,6 @@ const props = defineProps({
     type: String,
     default: '',
   },
-  isOnline: {
-    type: Boolean,
-    default: true,
-  },
-  replyTime: {
-    type: String,
-    default: '',
-  },
   color: {
     type: String,
     default: '',
@@ -101,25 +93,12 @@ const widgetScript = computed(() => {
   );
 });
 
-const replyTimeText = computed(() => {
-  switch (props.replyTime) {
-    case 'in_a_few_minutes':
-      return t('INBOX_MGMT.WIDGET_BUILDER.REPLY_TIME.IN_A_FEW_MINUTES');
-    case 'in_a_day':
-      return t('INBOX_MGMT.WIDGET_BUILDER.REPLY_TIME.IN_A_DAY');
-    default:
-      return t('INBOX_MGMT.WIDGET_BUILDER.REPLY_TIME.IN_A_FEW_HOURS');
-  }
-});
-
 const getWidgetConfig = computed(() => ({
   welcomeHeading: props.welcomeHeading,
   welcomeTagline: props.welcomeTagline,
   websiteName: props.websiteName,
   logo: props.logo,
   isDefaultScreen: !isChatMode.value,
-  isOnline: props.isOnline,
-  replyTime: replyTimeText.value,
   color: props.color,
 }));
 

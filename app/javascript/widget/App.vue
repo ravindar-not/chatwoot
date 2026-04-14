@@ -319,21 +319,28 @@ export default {
         } else if (message.event === 'toggle-open') {
           this.$store.dispatch('appConfig/toggleWidgetOpen', message.isOpen);
 
-          const shouldShowMessageView =
-            ['home'].includes(this.$route.name) &&
+          // Website widget (iframe): skip the home / "Start conversation" screen and
+          // open the chat composer immediately (same rules as Home → start conversation).
+          if (
+            this.isIFrame &&
             message.isOpen &&
-            this.messageCount;
+            ['home'].includes(this.$route.name)
+          ) {
+            if (this.shouldShowPreChatForm && !this.conversationSize) {
+              this.router.replace({ name: 'prechat-form' });
+            } else {
+              this.router.replace({ name: 'messages' });
+            }
+          }
+
           const shouldShowHomeView =
             !message.isOpen &&
             ['unread-messages', 'campaigns'].includes(this.$route.name);
 
-          if (shouldShowMessageView) {
-            this.router.replace({ name: 'messages' });
-          }
           if (shouldShowHomeView) {
             this.$store.dispatch('conversation/setUserLastSeen');
             this.unsetUnreadView();
-            this.router.replace({ name: 'home' });
+            this.router.replace({ name: 'messages' });
           }
           if (!message.isOpen) {
             this.resetCampaign();
