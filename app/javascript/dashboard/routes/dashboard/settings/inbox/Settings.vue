@@ -21,6 +21,7 @@ import PreChatFormSettings from './PreChatForm/Settings.vue';
 import WeeklyAvailability from './components/WeeklyAvailability.vue';
 import GreetingsEditor from 'shared/components/GreetingsEditor.vue';
 import ConfigurationPage from './settingsPage/ConfigurationPage.vue';
+import WidgetWelcomeSettings from './settingsPage/WidgetWelcomeSettings.vue';
 import EmailConfigurationPage from './settingsPage/EmailConfigurationPage.vue';
 import CustomerSatisfactionPage from './settingsPage/CustomerSatisfactionPage.vue';
 import CollaboratorsPage from './settingsPage/CollaboratorsPage.vue';
@@ -45,6 +46,7 @@ export default {
     BotConfiguration,
     CollaboratorsPage,
     ConfigurationPage,
+    WidgetWelcomeSettings,
     EmailConfigurationPage,
     CustomerSatisfactionPage,
     FacebookReauthorize,
@@ -173,6 +175,10 @@ export default {
             key: 'pre-chat-form',
             name: this.$t('INBOX_MGMT.TABS.PRE_CHAT_FORM'),
           },
+          {
+            key: 'widget-welcome',
+            name: this.$t('INBOX_MGMT.TABS.WIDGET_WELCOME'),
+          },
         ];
       }
 
@@ -228,7 +234,12 @@ export default {
       return getInboxIconByType(type, medium, 'line');
     },
     bannerMaxWidth() {
-      const narrowTabs = ['collaborators', 'bot-configuration', 'email-configuration'];
+      const narrowTabs = [
+        'collaborators',
+        'bot-configuration',
+        'email-configuration',
+        'widget-welcome',
+      ];
       const wideIfWebWidget = ['configuration', 'inbox-settings'];
       if (narrowTabs.includes(this.selectedTabKey)) return 'max-w-4xl';
       if (wideIfWebWidget.includes(this.selectedTabKey)) {
@@ -1189,6 +1200,9 @@ export default {
         </div>
         <div v-if="selectedTabKey === 'pre-chat-form'">
           <PreChatFormSettings :inbox="inbox" />
+        </div>
+        <div v-if="selectedTabKey === 'widget-welcome'">
+          <WidgetWelcomeSettings :inbox="inbox" />
         </div>
         <div v-if="selectedTabKey === 'business-hours'">
           <WeeklyAvailability :inbox="inbox" />

@@ -53,6 +53,17 @@ export default {
         this.inReplyTo && (this.inReplyTo.content || this.inReplyTo.attachments)
       );
     },
+    suggestedStarterQueries() {
+      const list = window.chatwootWebChannel?.suggestedQueries;
+      return Array.isArray(list) ? list : [];
+    },
+    showSuggestedStarters() {
+      return (
+        !this.hideReplyBox &&
+        this.conversationSize === 0 &&
+        this.suggestedStarterQueries.length > 0
+      );
+    },
   },
   mounted() {
     emitter.on(BUS_EVENTS.TOGGLE_REPLY_TO_MESSAGE, this.toggleReplyTo);
@@ -78,6 +89,11 @@ export default {
         replyTo: this.inReplyTo ? this.inReplyTo.id : null,
       });
       this.inReplyTo = null;
+    },
+    selectSuggestedQuery(entry) {
+      const text = (entry && (entry.message || entry.label)) || '';
+      if (!text) return;
+      this.handleSendMessage(text);
     },
     startNewConversation() {
       this.router.replace({ name: 'prechat-form' });
@@ -124,6 +140,20 @@ export default {
       :in-reply-to="inReplyTo"
       @dismiss="inReplyTo = null"
     />
+    <div
+      v-if="showSuggestedStarters"
+      class="flex flex-wrap gap-2 px-5 pb-2"
+    >
+      <button
+        v-for="(entry, index) in suggestedStarterQueries"
+        :key="index"
+        type="button"
+        class="text-left text-sm px-3 py-1.5 rounded-lg border border-n-weak bg-n-slate-2 dark:bg-n-solid-2 text-n-slate-12 hover:bg-n-alpha-2 dark:hover:bg-n-alpha-2 transition-colors max-w-full"
+        @click="selectSuggestedQuery(entry)"
+      >
+        {{ entry.label || entry.message }}
+      </button>
+    </div>
     <ChatInputWrap
       class="shadow-sm"
       :on-send-message="handleSendMessage"

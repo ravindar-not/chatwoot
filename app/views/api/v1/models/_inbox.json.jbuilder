@@ -57,6 +57,18 @@ if resource.web_widget?
   json.pre_chat_form_enabled resource.channel.try(:pre_chat_form_enabled)
   json.pre_chat_form_options resource.channel.try(:pre_chat_form_options)
   json.continuity_via_email resource.channel.try(:continuity_via_email)
+  cfg = resource.widget_welcome_config
+  json.widget_welcome_config do
+    if cfg
+      json.main_heading cfg.main_heading
+      json.second_heading cfg.second_heading
+      json.suggested_queries cfg.suggested_queries
+    else
+      json.main_heading nil
+      json.second_heading nil
+      json.suggested_queries []
+    end
+  end
 end
 
 ## Facebook Attributes

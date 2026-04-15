@@ -625,11 +625,35 @@
       "CONFIGURATION": "Configuration",
       "CAMPAIGN": "Campaigns",
       "PRE_CHAT_FORM": "Pre Chat Form",
+      "WIDGET_WELCOME": "Widget welcome",
       "BUSINESS_HOURS": "Business Hours",
       "WIDGET_BUILDER": "Widget Builder",
       "BOT_CONFIGURATION": "Bot Configuration",
       "ACCOUNT_HEALTH": "Account Health",
       "CSAT": "CSAT"
+    },
+    "WIDGET_WELCOME": {
+      "DESCRIPTION": "Override the website widget welcome heading, subheading, and optional starter messages. When a heading is left blank here, the value from channel settings (welcome title and tagline) is used.",
+      "MAIN_HEADING": {
+        "LABEL": "Main heading",
+        "HELP": "Shown in the expanded widget header. Leave blank to use the channel welcome title.",
+        "PLACEHOLDER": "e.g. Hi there! How can we help?"
+      },
+      "SECOND_HEADING": {
+        "LABEL": "Secondary heading",
+        "HELP": "Shown under the main heading. Leave blank to use the channel welcome tagline.",
+        "PLACEHOLDER": "Short line of supporting text"
+      },
+      "SUGGESTED_QUERIES": {
+        "LABEL": "Suggested starter messages",
+        "HELP": "Optional quick prompts visitors can tap to start the conversation. Only rows with a message are saved.",
+        "BUTTON_LABEL": "Button label",
+        "BUTTON_LABEL_PLACEHOLDER": "Short label (defaults to message)",
+        "MESSAGE": "Message to send",
+        "MESSAGE_PLACEHOLDER": "Full message sent when the button is tapped",
+        "ADD": "Add starter message",
+        "REMOVE": "Remove"
+      }
     },
     "EMAIL_CONFIGURATION": {
       "DESCRIPTION": "Override sender and subject for automated emails tied to this inbox (for example, inbound verification links). Leave blank to use installation defaults. Message body uses the standard template until a custom body is supported.",

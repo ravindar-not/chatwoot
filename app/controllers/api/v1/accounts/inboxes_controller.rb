@@ -10,6 +10,7 @@ class Api::V1::Accounts::InboxesController < Api::V1::Accounts::BaseController
 
   def index
     @inboxes = policy_scope(Current.account.inboxes.order_by_name.includes(:channel, :email_configuration,
+                                                                                    :widget_welcome_config,
                                                                                     { avatar_attachment: [:blob] }))
   end
 
@@ -37,7 +38,7 @@ class Api::V1::Accounts::InboxesController < Api::V1::Accounts::BaseController
           name: inbox_name(channel),
           channel: channel
         }.merge(
-          permitted_params.except(:channel)
+          permitted_params.except(:channel, :widget_welcome_config)
         )
       )
       @inbox.save!
@@ -45,11 +46,12 @@ class Api::V1::Accounts::InboxesController < Api::V1::Accounts::BaseController
   end
 
   def update
-    inbox_params = permitted_params.except(:channel, :csat_config)
+    inbox_params = permitted_params.except(:channel, :csat_config, :widget_welcome_config)
     inbox_params[:csat_config] = format_csat_config(permitted_params[:csat_config]) if permitted_params[:csat_config].present?
     @inbox.update!(inbox_params)
     update_inbox_working_hours
     update_channel if channel_update_required?
+    update_widget_welcome_config if @inbox.web_widget? && permitted_params[:widget_welcome_config].present?
   end
 
   def agent_bot
@@ -75,7 +77,7 @@ class Api::V1::Accounts::InboxesController < Api::V1::Accounts::BaseController
   private
 
   def fetch_inbox
-    @inbox = Current.account.inboxes.includes(:email_configuration).find(params[:id])
+    @inbox = Current.account.inboxes.includes(:email_configuration, :widget_welcome_config).find(params[:id])
     authorize @inbox, :show?
   end
 
@@ -162,7 +164,20 @@ class Api::V1::Accounts::InboxesController < Api::V1::Accounts::BaseController
   def permitted_params(channel_attributes = [])
     # We will remove this line after fixing https://linear.app/chatwoot/issue/CW-1567/null-value-passed-as-null-string-to-backend
     params.each { |k, v| params[k] = params[k] == 'null' ? nil : v }
-    params.permit(*inbox_attributes, channel: [:type, *channel_attributes])
+    params.permit(
+      *inbox_attributes,
+      { widget_welcome_config: [:main_heading, :second_heading, { suggested_queries: [:label, :message] }] },
+      channel: [:type, *channel_attributes]
+    )
+  end
+
+  def update_widget_welcome_config
+    wwc = permitted_params[:widget_welcome_config]
+    return if wwc.blank?
+
+    config = @inbox.widget_welcome_config || @inbox.build_widget_welcome_config
+    config.assign_attributes(wwc)
+    config.save!
   end
 
   def channel_type_from_params

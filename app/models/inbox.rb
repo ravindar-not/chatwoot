@@ -76,6 +76,7 @@ class Inbox < ApplicationRecord
   has_one :agent_bot_inbox, dependent: :destroy_async
   has_one :agent_bot, through: :agent_bot_inbox
   has_one :email_configuration, as: :configurable, dependent: :destroy, class_name: 'EmailConfiguration'
+  has_one :widget_welcome_config, dependent: :destroy
   has_many :webhooks, dependent: :destroy_async
   has_many :hooks, dependent: :destroy_async, class_name: 'Integrations::Hook'
 
@@ -184,6 +185,18 @@ class Inbox < ApplicationRecord
       id: id,
       name: name
     }
+  end
+
+  def widget_welcome_heading
+    widget_welcome_config&.main_heading.presence || channel.try(:welcome_title)
+  end
+
+  def widget_welcome_subheading
+    widget_welcome_config&.second_heading.presence || channel.try(:welcome_tagline)
+  end
+
+  def widget_suggested_queries
+    widget_welcome_config&.suggested_queries.presence || []
   end
 
   def callback_webhook_url
