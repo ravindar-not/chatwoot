@@ -22,6 +22,8 @@ import { useRouter } from 'vue-router';
 import { useAvailability } from 'widget/composables/useAvailability';
 import { SDK_SET_BUBBLE_VISIBILITY } from '../shared/constants/sharedFrameEvents';
 import { emitter } from 'shared/helpers/mitt';
+import { isOngoingConversation } from 'widget/helpers/conversationRoute';
+import { CONVERSATION_STATUS } from 'shared/constants/messages';
 
 export default {
   name: 'App',
@@ -77,6 +79,18 @@ export default {
         document.documentElement.dir = value ? 'rtl' : 'ltr';
       },
     },
+    '$store.state.conversationAttributes.status'(newStatus, oldStatus) {
+      if (
+        newStatus === CONVERSATION_STATUS.RESOLVED &&
+        oldStatus &&
+        oldStatus !== CONVERSATION_STATUS.RESOLVED
+      ) {
+        this.$store.dispatch('conversation/clearConversations');
+        if (this.$route.name === 'messages') {
+          this.router.replace({ name: 'home' });
+        }
+      }
+    },
   },
   mounted() {
     const { websiteToken, locale, widgetColor } = window.chatwootWebChannel;
@@ -87,8 +101,13 @@ export default {
     if (this.isIFrame) {
       this.registerListeners();
       this.sendLoadedEvent();
+      this.$store.dispatch('conversationAttributes/getAttributes');
     } else {
-      this.fetchOldConversations();
+      (async () => {
+        await this.fetchOldConversations();
+        await this.$store.dispatch('conversationAttributes/getAttributes');
+        await this.applyDefaultConversationRoute();
+      })();
       this.fetchAvailableAgents(websiteToken);
       this.setLocale(getLocale(window.location.search));
     }
@@ -96,7 +115,6 @@ export default {
       this.registerListeners();
       this.sendRNWebViewLoadedEvent();
     }
-    this.$store.dispatch('conversationAttributes/getAttributes');
     this.registerUnreadEvents();
     this.registerCampaignEvents();
   },
@@ -115,6 +133,29 @@ export default {
       'resetCampaign',
     ]),
     ...mapActions('agent', ['fetchAvailableAgents']),
+    applyDefaultConversationRoute() {
+      const skipRoutes = [
+        'campaigns',
+        'unread-messages',
+        'article-viewer',
+        'prechat-form',
+      ];
+      if (skipRoutes.includes(this.$route.name)) return;
+
+      const attrs = this.$store.getters['conversationAttributes/getConversationParams'];
+      const ongoing = isOngoingConversation(attrs);
+
+      if (ongoing) {
+        if (this.$route.name === 'home') {
+          this.router.replace({ name: 'messages' });
+        }
+      } else {
+        this.$store.dispatch('conversation/clearConversations');
+        if (this.$route.name === 'messages') {
+          this.router.replace({ name: 'home' });
+        }
+      }
+    },
     setWidgetColorVariable(widgetColor) {
       if (widgetColor) {
         document.documentElement.style.setProperty(
@@ -265,7 +306,13 @@ export default {
         if (message.event === 'config-set') {
           this.setLocale(message.locale);
           this.setBubbleLabel();
-          this.fetchOldConversations().then(() => this.setUnreadView());
+          Promise.all([
+            this.fetchOldConversations(),
+            this.$store.dispatch('conversationAttributes/getAttributes'),
+          ]).then(() => {
+            this.applyDefaultConversationRoute();
+            this.setUnreadView();
+          });
           this.fetchAvailableAgents(websiteToken);
           this.setAppConfig(message);
           this.$store.dispatch('contacts/get');
@@ -319,16 +366,14 @@ export default {
         } else if (message.event === 'toggle-open') {
           this.$store.dispatch('appConfig/toggleWidgetOpen', message.isOpen);
 
-          // Website widget (iframe): skip the home / "Start conversation" screen and
-          // open the chat composer immediately (same rules as Home → start conversation).
           if (
             this.isIFrame &&
             message.isOpen &&
-            ['home'].includes(this.$route.name)
+            this.$route.name === 'home'
           ) {
-            if (this.shouldShowPreChatForm && !this.conversationSize) {
-              this.router.replace({ name: 'prechat-form' });
-            } else {
+            const attrs =
+              this.$store.getters['conversationAttributes/getConversationParams'];
+            if (isOngoingConversation(attrs)) {
               this.router.replace({ name: 'messages' });
             }
           }

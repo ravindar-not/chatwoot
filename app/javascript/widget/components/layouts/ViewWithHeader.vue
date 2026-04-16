@@ -50,6 +50,13 @@ export default {
     isOnHomeView() {
       return ['home'].includes(this.$route.name);
     },
+    /** Hide welcome tagline under the title on the conversation screen only. */
+    collapsedHeaderSubtitle() {
+      if (this.$route.name === 'messages') {
+        return '';
+      }
+      return this.channelConfig.welcomeTagline;
+    },
     opacityClass() {
       if (this.isHeaderCollapsed) {
         return {};
@@ -128,11 +135,11 @@ export default {
           :avatar-url="channelConfig.avatarUrl"
           :show-popout-button="appConfig.showPopoutButton"
           :show-back-button="showBackButton"
-          :static-subtitle="channelConfig.welcomeTagline"
+          :static-subtitle="collapsedHeaderSubtitle"
         />
       </div>
       <Banner />
-      <router-view />
+      <router-view class="flex min-h-0 flex-1 flex-col" />
 
     </div>
   </div>

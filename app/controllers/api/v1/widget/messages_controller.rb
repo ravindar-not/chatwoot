@@ -43,7 +43,14 @@ class Api::V1::Widget::MessagesController < Api::V1::Widget::BaseController
   end
 
   def set_conversation
-    @conversation = create_conversation if conversation.nil?
+    latest = conversations.last
+    @conversation = if latest.nil?
+                      create_conversation
+                    elsif latest.resolved? && !latest.contact&.blocked?
+                      create_conversation
+                    else
+                      latest
+                    end
   end
 
   def message_finder_params

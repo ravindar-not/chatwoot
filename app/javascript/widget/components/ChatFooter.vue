@@ -38,9 +38,18 @@ export default {
       return getContrastingTextColor(this.widgetColor);
     },
     hideReplyBox() {
+      // Conversation screen always uses the composer (new messages use a new server-side thread when needed).
+      if (this.$route.name === 'messages') {
+        return false;
+      }
       const { allowMessagesAfterResolved } = window.chatwootWebChannel;
       const { status } = this.conversationAttributes;
-      return !allowMessagesAfterResolved && status === 'resolved';
+      const resolved = status === 'resolved';
+      // Home is the "start fresh" screen after a conversation ends: always show the composer there.
+      if (this.$route.name === 'home' && resolved) {
+        return false;
+      }
+      return !allowMessagesAfterResolved && resolved;
     },
     showEmailTranscriptButton() {
       return this.hasEmail;
@@ -64,36 +73,91 @@ export default {
         this.suggestedStarterQueries.length > 0
       );
     },
+    /** Suggested chips above the composer on home; below on messages. */
+    chipsAboveInput() {
+      return this.$route.name === 'home';
+    },
+    /** Suggested chips panel: full width, two columns. */
+    suggestedChipsPanelClass() {
+      return [
+        'grid max-w-none grid-cols-2 gap-2.5',
+        '-mx-5 w-[calc(100%+2.5rem)]',
+        'border border-n-weak/90',
+        'bg-white dark:bg-n-solid-2',
+        'px-4 py-3.5',
+        'shadow-[0_2px_12px_rgba(15,23,42,0.07)] dark:shadow-[0_2px_12px_rgba(0,0,0,0.35)]',
+        'ring-1 ring-n-slate-4/15 dark:ring-n-slate-9/40',
+      ].join(' ');
+    },
+    homeChipsContainerStyle() {
+      if (!this.widgetColor) return {};
+      return {
+        borderTopWidth: '3px',
+        borderTopColor: this.widgetColor,
+        borderTopStyle: 'solid',
+      };
+    },
+    /** Grid cell: label + optional message preview. */
+    suggestedChipButtonClass() {
+      return [
+        'flex min-h-[4.25rem] w-full min-w-0 flex-col justify-center gap-1 rounded-xl px-3 py-2.5 text-left',
+        'bg-n-alpha-2/90 dark:bg-n-alpha-2',
+        'border border-n-weak dark:border-n-strong',
+        'shadow-sm',
+        'transition-all duration-150 ease-out',
+        'hover:border-n-slate-6 hover:bg-n-alpha-3 hover:shadow dark:hover:border-n-slate-7',
+        'active:scale-[0.99]',
+        'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-n-brand',
+      ].join(' ');
+    },
   },
   mounted() {
     emitter.on(BUS_EVENTS.TOGGLE_REPLY_TO_MESSAGE, this.toggleReplyTo);
   },
   methods: {
     ...mapActions('conversation', ['sendMessage', 'sendAttachment']),
-    ...mapActions('conversationAttributes', ['getAttributes']),
     async handleSendMessage(content) {
+      const fromHome = this.$route.name === 'home';
       await this.sendMessage({
         content,
         replyTo: this.inReplyTo ? this.inReplyTo.id : null,
       });
       // reset replyTo message after sending
       this.inReplyTo = null;
-      // Update conversation attributes on new conversation
-      if (this.conversationSize === 0) {
-        this.getAttributes();
+      if (fromHome) {
+        await this.router.replace({ name: 'messages' });
       }
     },
     async handleSendAttachment(attachment) {
+      const fromHome = this.$route.name === 'home';
       await this.sendAttachment({
         attachment,
         replyTo: this.inReplyTo ? this.inReplyTo.id : null,
       });
       this.inReplyTo = null;
+      if (fromHome) {
+        await this.router.replace({ name: 'messages' });
+      }
     },
     selectSuggestedQuery(entry) {
-      const text = (entry && (entry.message || entry.label)) || '';
+      const message = String(entry?.message || '').trim();
+      const label = String(entry?.label || '').trim();
+      const text = message || label;
       if (!text) return;
       this.handleSendMessage(text);
+    },
+    suggestedQueryPrimaryText(entry) {
+      if (!entry) return '';
+      const label = String(entry.label || '').trim();
+      const message = String(entry.message || '').trim();
+      return label || message;
+    },
+    suggestedQuerySecondaryText(entry) {
+      if (!entry) return '';
+      const label = String(entry.label || '').trim();
+      const message = String(entry.message || '').trim();
+      if (!label || !message || label === message) return '';
+      return message;
     },
     startNewConversation() {
       this.router.replace({ name: 'prechat-form' });
@@ -128,7 +192,7 @@ export default {
 <template>
   <footer
     v-if="!hideReplyBox"
-    class="relative z-50"
+    class="relative z-50 flex flex-col gap-3"
     :class="{
       'rounded-lg': !isWidgetStyleFlat,
       'pt-2.5 shadow-[0px_-20px_20px_1px_rgba(0,_0,_0,_0.05)] dark:shadow-[0px_-20px_20px_1px_rgba(0,_0,_0,_0.15)] rounded-t-none':
@@ -141,17 +205,34 @@ export default {
       @dismiss="inReplyTo = null"
     />
     <div
-      v-if="showSuggestedStarters"
-      class="flex flex-wrap gap-2 px-5 pb-2"
+      v-if="showSuggestedStarters && chipsAboveInput"
+      :class="[
+        suggestedChipsPanelClass,
+        {
+          'rounded-t-lg rounded-b-2xl': !isWidgetStyleFlat && !hasReplyTo,
+          'rounded-2xl': isWidgetStyleFlat || hasReplyTo,
+        },
+      ]"
+      :style="homeChipsContainerStyle"
     >
       <button
         v-for="(entry, index) in suggestedStarterQueries"
-        :key="index"
+        :key="`above-${index}`"
         type="button"
-        class="text-left text-sm px-3 py-1.5 rounded-lg border border-n-weak bg-n-slate-2 dark:bg-n-solid-2 text-n-slate-12 hover:bg-n-alpha-2 dark:hover:bg-n-alpha-2 transition-colors max-w-full"
+        :class="suggestedChipButtonClass"
         @click="selectSuggestedQuery(entry)"
       >
-        {{ entry.label || entry.message }}
+        <span
+          class="line-clamp-2 text-sm font-semibold leading-snug text-n-slate-12 dark:text-n-slate-11"
+        >
+          {{ suggestedQueryPrimaryText(entry) }}
+        </span>
+        <span
+          v-if="suggestedQuerySecondaryText(entry)"
+          class="line-clamp-2 text-xs font-normal leading-snug text-n-slate-10 dark:text-n-slate-11"
+        >
+          {{ suggestedQuerySecondaryText(entry) }}
+        </span>
       </button>
     </div>
     <ChatInputWrap
@@ -159,6 +240,30 @@ export default {
       :on-send-message="handleSendMessage"
       :on-send-attachment="handleSendAttachment"
     />
+    <div
+      v-if="showSuggestedStarters && !chipsAboveInput"
+      :class="[suggestedChipsPanelClass, 'rounded-xl']"
+    >
+      <button
+        v-for="(entry, index) in suggestedStarterQueries"
+        :key="`below-${index}`"
+        type="button"
+        :class="suggestedChipButtonClass"
+        @click="selectSuggestedQuery(entry)"
+      >
+        <span
+          class="line-clamp-2 text-sm font-semibold leading-snug text-n-slate-12 dark:text-n-slate-11"
+        >
+          {{ suggestedQueryPrimaryText(entry) }}
+        </span>
+        <span
+          v-if="suggestedQuerySecondaryText(entry)"
+          class="line-clamp-2 text-xs font-normal leading-snug text-n-slate-10 dark:text-n-slate-11"
+        >
+          {{ suggestedQuerySecondaryText(entry) }}
+        </span>
+      </button>
+    </div>
   </footer>
   <div v-else>
     <CustomButton
