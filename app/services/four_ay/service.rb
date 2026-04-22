@@ -25,7 +25,9 @@ module FourAy
         )
 
         streaming = ENV.fetch('STREAMING', 'false').to_s
-        use_streaming_http = streaming.strip.casecmp('true').zero?
+        streaming_enabled = streaming.strip.casecmp('true').zero?
+        use_streaming_http = streaming_enabled && conversation&.inbox&.web_widget?
+        request_streaming = use_streaming_http ? 'true' : 'false'
         if endpoint.blank? || api_key.blank?
           Rails.logger.error 'FourAy::Service: FOUR_AY_API_BASE_URL or FOUR_AY_API_KEY is missing'
           return empty
@@ -43,7 +45,7 @@ module FourAy
           agent_id: resolved_agent_id,
           query: content,
           session_id: session_id,
-          streaming: streaming,
+          streaming: request_streaming,
           variables: variables
         }
 
@@ -51,7 +53,7 @@ module FourAy
           "FourAy::Service: agent_id=#{resolved_agent_id} session_id=#{session_id} user_role=#{resolved_user_role}"
         )
 
-        stream_id = (use_streaming_http && conversation.present? ? SecureRandom.uuid : nil)
+        stream_id = (use_streaming_http ? SecureRandom.uuid : nil)
         last_streamed = nil
         last_stream_broadcast_mono = nil
         stream_broadcast_min_interval_s =
