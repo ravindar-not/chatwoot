@@ -4,6 +4,26 @@ import { groupConversationBySender } from './helpers';
 import { formatUnixDate } from 'shared/helpers/DateHelper';
 
 export const getters = {
+  getAwaitingAgentReply: _state => !!_state.uiFlags.awaitingAgentReply,
+  /**
+   * True while the widget is waiting on the agent pipeline: API in flight, typing indicator,
+   * or FourAY stream chunks for the active conversation (including empty first chunks).
+   */
+  getComposerReplyPipelineBusy: (_state, _getters, _rootState, rootGetters) => {
+    if (_state.uiFlags.awaitingAgentReply) return true;
+    if (_state.uiFlags.isCreating) return true;
+    if (_state.uiFlags.isAgentTyping) return true;
+    const s = _state.fourAyStreamReply;
+    if (s.active) {
+      const activeId =
+        rootGetters['conversationAttributes/getConversationParams']?.id;
+      if (activeId && String(s.conversationId) === String(activeId)) {
+        return true;
+      }
+    }
+    return false;
+  },
+  getFourAyStreamReply: _state => _state.fourAyStreamReply,
   getAllMessagesLoaded: _state => _state.uiFlags.allMessagesLoaded,
   getIsCreating: _state => _state.uiFlags.isCreating,
   getIsAgentTyping: _state => _state.uiFlags.isAgentTyping,

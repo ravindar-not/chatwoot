@@ -12,8 +12,17 @@ const state = {
     isFetchingList: false,
     isAgentTyping: false,
     isCreating: false,
+    /** True after user text is sent until an agent OUTGOING message is stored (see getComposerReplyPipelineBusy). */
+    awaitingAgentReply: false,
   },
   lastMessageId: null,
+  /** Ephemeral FourAY streaming reply (ActionCable +four_ay.reply_stream+). */
+  fourAyStreamReply: {
+    active: false,
+    conversationId: null,
+    streamId: null,
+    content: '',
+  },
 };
 
 export default {

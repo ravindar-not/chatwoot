@@ -50,13 +50,44 @@ class ContactInboxWithContactBuilder
 
   def create_contact
     account.contacts.create!(
-      name: contact_attributes[:name] || ::Haikunator.haikunate(1000),
+      name: contact_name_for_new_contact,
       phone_number: contact_attributes[:phone_number],
       email: contact_attributes[:email],
       identifier: contact_attributes[:identifier],
       additional_attributes: contact_attributes[:additional_attributes],
       custom_attributes: contact_attributes[:custom_attributes]
     )
+  end
+
+  def contact_name_for_new_contact
+    name = contact_attributes[:name]
+    return name if name.present?
+    return '' if skip_random_contact_display_name?
+
+    ::Haikunator.haikunate(1000)
+  end
+
+  # No Haikunator when the widget will collect identity via pre-chat (channel toggle and/or enabled fields).
+  def skip_random_contact_display_name?
+    return false unless inbox.web_widget?
+
+    channel = inbox.channel
+    return true if channel.pre_chat_form_enabled
+    return true if pre_chat_form_has_enabled_fields?(channel)
+
+    false
+  end
+
+  def pre_chat_form_has_enabled_fields?(channel)
+    opts = channel.pre_chat_form_options
+    return false if opts.blank?
+
+    fields = opts.with_indifferent_access[:pre_chat_fields]
+    return false if fields.blank?
+
+    Array.wrap(fields).any? do |field|
+      field.is_a?(Hash) && field.with_indifferent_access[:enabled]
+    end
   end
 
   def find_contact

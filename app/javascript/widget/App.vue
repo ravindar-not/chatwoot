@@ -79,15 +79,19 @@ export default {
         document.documentElement.dir = value ? 'rtl' : 'ltr';
       },
     },
-    '$store.state.conversationAttributes.status'(newStatus, oldStatus) {
+    '$store.state.conversationAttributes.status': async function conversationStatusWatcher(
+      newStatus,
+      oldStatus
+    ) {
       if (
         newStatus === CONVERSATION_STATUS.RESOLVED &&
         oldStatus &&
         oldStatus !== CONVERSATION_STATUS.RESOLVED
       ) {
-        this.$store.dispatch('conversation/clearConversations');
+        await this.$store.dispatch('conversation/clearConversations');
+        await this.$store.dispatch('contacts/get');
         if (this.$route.name === 'messages') {
-          this.router.replace({ name: 'home' });
+          await this.router.replace({ name: 'home' });
         }
       }
     },
@@ -217,7 +221,7 @@ export default {
     },
     registerCampaignEvents() {
       emitter.on(ON_CAMPAIGN_MESSAGE_CLICK, () => {
-        if (this.shouldShowPreChatForm) {
+        if (this.shouldCollectPreChatFields) {
           this.router.replace({ name: 'prechat-form' });
         } else {
           this.router.replace({ name: 'messages' });

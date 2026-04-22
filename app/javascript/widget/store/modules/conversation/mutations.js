@@ -4,6 +4,13 @@ import { findUndeliveredMessage } from './helpers';
 export const mutations = {
   clearConversations($state) {
     $state.conversations = {};
+    $state.uiFlags.awaitingAgentReply = false;
+    $state.fourAyStreamReply = {
+      active: false,
+      conversationId: null,
+      streamId: null,
+      content: '',
+    };
   },
   pushMessageToConversation($state, message) {
     const { id, status, message_type: type } = message;
@@ -14,6 +21,10 @@ export const mutations = {
 
     if (!isMessageIncoming || isTemporaryMessage) {
       messagesInbox[id] = message;
+      if (type === MESSAGE_TYPE.OUTGOING) {
+        $state.uiFlags.awaitingAgentReply = false;
+        $state.uiFlags.isAgentTyping = false;
+      }
       return;
     }
 
@@ -61,9 +72,11 @@ export const mutations = {
   setMessagesInConversation($state, payload) {
     if (!payload.length) {
       $state.uiFlags.allMessagesLoaded = true;
+      $state.uiFlags.awaitingAgentReply = false;
       return;
     }
 
+    $state.uiFlags.awaitingAgentReply = false;
     payload.forEach(message => {
       $state.conversations[message.id] = message;
     });
@@ -112,5 +125,27 @@ export const mutations = {
     if (!lastMessage) return;
     const { id } = lastMessage;
     $state.lastMessageId = id;
+  },
+
+  setFourAyStreamReply($state, { conversation_id, stream_id, content }) {
+    $state.fourAyStreamReply = {
+      active: true,
+      conversationId: conversation_id,
+      streamId: stream_id,
+      content: content || '',
+    };
+  },
+
+  clearFourAyStreamReply($state) {
+    // Stream completion means the generated response is finalized for this turn.
+    // Immediately clear waiting indicators so composer can re-enable without delay.
+    $state.uiFlags.awaitingAgentReply = false;
+    $state.uiFlags.isAgentTyping = false;
+    $state.fourAyStreamReply = {
+      active: false,
+      conversationId: null,
+      streamId: null,
+      content: '',
+    };
   },
 };

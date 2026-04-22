@@ -105,8 +105,8 @@ export const actions = {
 
 export const mutations = {
   [SET_CURRENT_USER]($state, user) {
-    const { currentUser } = $state;
-    $state.currentUser = { ...currentUser, ...user };
+    // Replace (do not merge) so refetched contact flags cannot stay stale.
+    $state.currentUser = { ...(user || {}) };
   },
 };
 

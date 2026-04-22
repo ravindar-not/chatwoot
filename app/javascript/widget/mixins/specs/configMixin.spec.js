@@ -1,6 +1,20 @@
 import { shallowMount } from '@vue/test-utils';
+import { createStore } from 'vuex';
 import configMixin from '../configMixin';
 import { reactive } from 'vue';
+
+const createContactsStore = currentUser =>
+  createStore({
+    modules: {
+      contacts: {
+        namespaced: true,
+        state: () => ({ currentUser }),
+        getters: {
+          getCurrentUser: state => state.currentUser,
+        },
+      },
+    },
+  });
 
 const preChatFields = [
   {
@@ -36,6 +50,7 @@ global.chatwootWebChannel = {
 
 describe('configMixin', () => {
   test('returns config', () => {
+    const store = createContactsStore({});
     const wrapper = shallowMount({
       mixins: [configMixin],
       data() {
@@ -44,6 +59,9 @@ describe('configMixin', () => {
         };
       },
       template: '<div />', // Render a simple div as the template
+      global: {
+        plugins: [store],
+      },
     });
 
     expect(wrapper.vm.hasEmojiPickerEnabled).toBe(true);
@@ -74,5 +92,25 @@ describe('configMixin', () => {
     });
     expect(wrapper.vm.preChatFormEnabled).toBe(true);
     expect(wrapper.vm.shouldShowPreChatForm).toBe(true);
+    expect(wrapper.vm.shouldCollectPreChatFields).toBe(true);
+  });
+
+  test('shouldCollectPreChatFields is false when contact already has identity fields', () => {
+    const store = createContactsStore({
+      has_email: true,
+      has_phone_number: true,
+      has_name: true,
+    });
+    const wrapper = shallowMount({
+      mixins: [configMixin],
+      template: '<div />',
+      global: {
+        plugins: [store],
+      },
+    });
+
+    expect(wrapper.vm.shouldShowPreChatForm).toBe(true);
+    expect(wrapper.vm.remainingPreChatFieldsToCollect).toEqual([]);
+    expect(wrapper.vm.shouldCollectPreChatFields).toBe(false);
   });
 });

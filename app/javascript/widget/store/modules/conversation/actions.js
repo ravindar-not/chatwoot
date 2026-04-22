@@ -13,10 +13,13 @@ import {
 import { ON_CONVERSATION_CREATED } from 'widget/constants/widgetBusEvents';
 import { createTemporaryMessage, getNonDeletedMessages } from './helpers';
 import { emitter } from 'shared/helpers/mitt';
+import { MESSAGE_TYPE } from 'widget/helpers/constants';
+
 export const actions = {
   createConversation: async ({ commit, dispatch }, params) => {
     commit('setConversationUIFlag', { isCreating: true });
     try {
+      commit('setConversationUIFlag', { awaitingAgentReply: true });
       const { data } = await createConversationAPI(params);
       const { messages } = data;
       const [message = {}] = messages;
@@ -25,7 +28,7 @@ export const actions = {
       // Emit event to notify that conversation is created and show the chat screen
       emitter.emit(ON_CONVERSATION_CREATED);
     } catch (error) {
-      // Ignore error
+      commit('setConversationUIFlag', { awaitingAgentReply: false });
     } finally {
       commit('setConversationUIFlag', { isCreating: false });
     }
@@ -40,6 +43,7 @@ export const actions = {
 
     commit('pushMessageToConversation', message);
     commit('updateMessageMeta', { id, meta: { ...meta, error: '' } });
+    commit('setConversationUIFlag', { awaitingAgentReply: true });
     try {
       const { data } = await sendMessageAPI(content, replyTo);
 
@@ -48,6 +52,7 @@ export const actions = {
       commit('pushMessageToConversation', { ...data, status: 'sent' });
       await dispatch('conversationAttributes/getAttributes', {}, { root: true });
     } catch (error) {
+      commit('setConversationUIFlag', { awaitingAgentReply: false });
       commit('pushMessageToConversation', { ...message, status: 'failed' });
       commit('updateMessageMeta', {
         id,
@@ -126,6 +131,11 @@ export const actions = {
       missingMessages.forEach(message => {
         conversations[message.id] = message;
       });
+      if (
+        missingMessages.some(m => m.message_type === MESSAGE_TYPE.OUTGOING)
+      ) {
+        commit('setConversationUIFlag', { awaitingAgentReply: false });
+      }
       // Sort conversation messages by created_at
       const updatedConversation = Object.fromEntries(
         Object.entries(conversations).sort(

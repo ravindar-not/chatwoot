@@ -9,7 +9,9 @@ import { sendEmailTranscript } from 'widget/api/conversation';
 import { useRouter } from 'vue-router';
 import { IFrameHelper } from '../helpers/utils';
 import { CHATWOOT_ON_START_CONVERSATION } from '../constants/sdkEvents';
+import { PRECHAT_MESSAGE_DRAFT_STORAGE_KEY } from 'widget/constants/preChatDraft';
 import { emitter } from 'shared/helpers/mitt';
+import configMixin from 'widget/mixins/configMixin';
 
 export default {
   components: {
@@ -17,6 +19,7 @@ export default {
     CustomButton,
     FooterReplyTo,
   },
+  mixins: [configMixin],
   setup() {
     const router = useRouter();
     return { router };
@@ -33,7 +36,13 @@ export default {
       conversationSize: 'conversation/getConversationSize',
       currentUser: 'contacts/getCurrentUser',
       isWidgetStyleFlat: 'appConfig/isWidgetStyleFlat',
+      composerReplyPipelineBusy: 'conversation/getComposerReplyPipelineBusy',
     }),
+    messagesComposerLocked() {
+      return (
+        this.composerReplyPipelineBusy && this.$route.name === 'messages'
+      );
+    },
     textColor() {
       return getContrastingTextColor(this.widgetColor);
     },
@@ -116,8 +125,30 @@ export default {
   },
   methods: {
     ...mapActions('conversation', ['sendMessage', 'sendAttachment']),
+    openPreChatForm({ draftMessage } = {}) {
+      if (draftMessage) {
+        sessionStorage.setItem(PRECHAT_MESSAGE_DRAFT_STORAGE_KEY, draftMessage);
+      } else {
+        sessionStorage.removeItem(PRECHAT_MESSAGE_DRAFT_STORAGE_KEY);
+      }
+      this.router.replace({ name: 'prechat-form' });
+      IFrameHelper.sendMessage({
+        event: 'onEvent',
+        eventIdentifier: CHATWOOT_ON_START_CONVERSATION,
+        data: { hasConversation: true },
+      });
+    },
     async handleSendMessage(content) {
+      if (this.composerReplyPipelineBusy) return;
       const fromHome = this.$route.name === 'home';
+      if (
+        fromHome &&
+        this.shouldCollectPreChatFields &&
+        this.conversationSize === 0
+      ) {
+        this.openPreChatForm({ draftMessage: content });
+        return;
+      }
       await this.sendMessage({
         content,
         replyTo: this.inReplyTo ? this.inReplyTo.id : null,
@@ -129,7 +160,16 @@ export default {
       }
     },
     async handleSendAttachment(attachment) {
+      if (this.composerReplyPipelineBusy) return;
       const fromHome = this.$route.name === 'home';
+      if (
+        fromHome &&
+        this.shouldCollectPreChatFields &&
+        this.conversationSize === 0
+      ) {
+        this.openPreChatForm();
+        return;
+      }
       await this.sendAttachment({
         attachment,
         replyTo: this.inReplyTo ? this.inReplyTo.id : null,
@@ -160,12 +200,16 @@ export default {
       return message;
     },
     startNewConversation() {
-      this.router.replace({ name: 'prechat-form' });
-      IFrameHelper.sendMessage({
-        event: 'onEvent',
-        eventIdentifier: CHATWOOT_ON_START_CONVERSATION,
-        data: { hasConversation: true },
-      });
+      if (this.shouldCollectPreChatFields) {
+        this.openPreChatForm();
+      } else {
+        this.router.replace({ name: 'messages' });
+        IFrameHelper.sendMessage({
+          event: 'onEvent',
+          eventIdentifier: CHATWOOT_ON_START_CONVERSATION,
+          data: { hasConversation: true },
+        });
+      }
     },
     toggleReplyTo(message) {
       this.inReplyTo = message;
@@ -219,6 +263,7 @@ export default {
         v-for="(entry, index) in suggestedStarterQueries"
         :key="`above-${index}`"
         type="button"
+        :disabled="composerReplyPipelineBusy"
         :class="suggestedChipButtonClass"
         @click="selectSuggestedQuery(entry)"
       >
@@ -237,6 +282,7 @@ export default {
     </div>
     <ChatInputWrap
       class="shadow-sm"
+      :messages-composer-locked="messagesComposerLocked"
       :on-send-message="handleSendMessage"
       :on-send-attachment="handleSendAttachment"
     />
@@ -248,6 +294,7 @@ export default {
         v-for="(entry, index) in suggestedStarterQueries"
         :key="`below-${index}`"
         type="button"
+        :disabled="composerReplyPipelineBusy"
         :class="suggestedChipButtonClass"
         @click="selectSuggestedQuery(entry)"
       >

@@ -123,5 +123,74 @@ describe ContactInboxWithContactBuilder do
       expect(contact_inbox.id).not_to eq(facebook_contact_inbox.id)
       expect(contact_inbox.inbox_id).to eq(instagram_inbox.id)
     end
+
+    it 'creates contact with blank name when web widget has pre-chat form enabled' do
+      channel = create(:channel_widget, account: account, pre_chat_form_enabled: true)
+      inbox = channel.inbox
+
+      contact_inbox = described_class.new(
+        source_id: SecureRandom.uuid,
+        inbox: inbox,
+        contact_attributes: {
+          additional_attributes: {}
+        }
+      ).perform
+
+      expect(contact_inbox.contact.name).to eq('')
+    end
+
+    it 'uses random name for web widget when pre-chat form is disabled' do
+      channel = create(:channel_widget, account: account, pre_chat_form_enabled: false)
+      inbox = channel.inbox
+
+      contact_inbox = described_class.new(
+        source_id: SecureRandom.uuid,
+        inbox: inbox,
+        contact_attributes: {
+          additional_attributes: {}
+        }
+      ).perform
+
+      expect(contact_inbox.contact.name).to be_present
+    end
+
+    it 'creates contact with blank name when pre-chat fields are enabled even if channel toggle is false' do
+      channel = create(:channel_widget, account: account, pre_chat_form_enabled: false)
+      channel.update!(
+        pre_chat_form_options: {
+          'pre_chat_message' => 'Hi',
+          'pre_chat_fields' => [
+            { 'name' => 'fullName', 'enabled' => true, 'field_type' => 'standard', 'type' => 'text', 'required' => false }
+          ]
+        }
+      )
+      inbox = channel.inbox
+
+      contact_inbox = described_class.new(
+        source_id: SecureRandom.uuid,
+        inbox: inbox,
+        contact_attributes: {
+          additional_attributes: {}
+        }
+      ).perform
+
+      expect(contact_inbox.contact.name).to eq('')
+    end
+
+    it 'uses provided name for web widget when pre-chat form is enabled' do
+      channel = create(:channel_widget, account: account, pre_chat_form_enabled: true)
+      inbox = channel.inbox
+
+      contact_inbox = described_class.new(
+        source_id: SecureRandom.uuid,
+        inbox: inbox,
+        contact_attributes: {
+          name: 'Jane Doe',
+          additional_attributes: {}
+        }
+      ).perform
+
+      expect(contact_inbox.contact.name).to eq('Jane Doe')
+    end
   end
 end

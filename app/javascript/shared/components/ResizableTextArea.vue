@@ -39,6 +39,10 @@ export default {
       type: Boolean,
       default: false,
     },
+    disabled: {
+      type: Boolean,
+      default: false,
+    },
   },
   emits: [
     'typingOn',
@@ -76,7 +80,7 @@ export default {
       // Suppose if someone manually set the cursor to the middle of the body
       // and starts typing, the cursor will be set to the end of the body
       // A surprise cursor jump? Definitely not user-friendly.
-      if (document.activeElement !== this.$refs.textarea) {
+      if (!this.disabled && document.activeElement !== this.$refs.textarea) {
         this.$nextTick(() => {
           this.setCursor();
         });
@@ -92,9 +96,13 @@ export default {
     this.$nextTick(() => {
       if (this.modelValue) {
         this.resizeTextarea();
-        this.setCursor();
-      } else {
+        if (!this.disabled) {
+          this.setCursor();
+        }
+      } else if (!this.disabled) {
         this.focus();
+      } else {
+        this.resizeTextarea();
       }
     });
   },
@@ -129,6 +137,7 @@ export default {
       });
     },
     setCursor() {
+      if (this.disabled) return;
       const bodyWithoutSignature = removeSignature(
         this.modelValue,
         this.cleanedSignature
@@ -144,6 +153,7 @@ export default {
       }
     },
     onInput(event) {
+      if (this.disabled) return;
       this.$emit('update:modelValue', event.target.value);
       this.$emit('input', event.target.value);
       this.resizeTextarea();
@@ -159,6 +169,7 @@ export default {
       this.$emit('focus');
     },
     focus() {
+      if (this.disabled) return;
       if (this.$refs.textarea) this.$refs.textarea.focus();
     },
   },
@@ -168,6 +179,7 @@ export default {
 <template>
   <textarea
     ref="textarea"
+    :disabled="disabled"
     :placeholder="placeholder"
     :rows="rows"
     :value="modelValue"

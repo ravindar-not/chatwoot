@@ -60,6 +60,7 @@
   "POWERED_BY": "Powered by Chatwoot",
   "EMAIL_PLACEHOLDER": "Please enter your email",
   "CHAT_PLACEHOLDER": "Type your message",
+  "CHAT_PLACEHOLDER_WAITING_FOR_REPLY": "Waiting for a reply…",
   "TODAY": "Today",
   "YESTERDAY": "Yesterday",
   "PRE_CHAT_FORM": {

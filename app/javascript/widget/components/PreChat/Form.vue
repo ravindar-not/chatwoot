@@ -6,6 +6,8 @@ import { getContrastingTextColor } from '@chatwoot/utils';
 import { isEmptyObject } from 'widget/helpers/utils';
 import { getRegexp } from 'shared/helpers/Validators';
 import { useMessageFormatter } from 'shared/composables/useMessageFormatter';
+import { PRECHAT_MESSAGE_DRAFT_STORAGE_KEY } from 'widget/constants/preChatDraft';
+import { filterPreChatFieldsByKnownContact } from 'widget/helpers/preChatForm';
 import configMixin from 'widget/mixins/configMixin';
 import { FormKit, createInput } from '@formkit/vue';
 import PhoneInput from 'widget/components/Form/PhoneInput.vue';
@@ -37,6 +39,10 @@ export default {
       locale: this.$root.$i18n.locale,
       hasErrorInPhoneInput: false,
       message: '',
+      /** Set when message came from home composer / suggested chip (draft in sessionStorage). */
+      messagePrefilledFromHome: false,
+      /** Kept outside FormKit model — hidden fields are unregistered and would drop `message`. */
+      homeDraftMessage: '',
       formValues: {},
       labels: {
         emailAddress: 'EMAIL_ADDRESS',
@@ -62,6 +68,10 @@ export default {
     hasActiveCampaign() {
       return !isEmptyObject(this.activeCampaign);
     },
+    showPreChatMessageField() {
+      if (this.hasActiveCampaign) return false;
+      return !this.messagePrefilledFromHome;
+    },
     shouldShowHeaderMessage() {
       return (
         this.hasActiveCampaign ||
@@ -81,27 +91,10 @@ export default {
       return this.preChatFormEnabled ? this.options.preChatFields : [];
     },
     filteredPreChatFields() {
-      const isUserEmailAvailable = this.currentUser.has_email;
-      const isUserPhoneNumberAvailable = this.currentUser.has_phone_number;
-      const isUserIdentifierAvailable = !!this.currentUser.identifier;
-
-      const isUserNameAvailable = !!(
-        isUserIdentifierAvailable ||
-        isUserEmailAvailable ||
-        isUserPhoneNumberAvailable
+      return filterPreChatFieldsByKnownContact(
+        this.preChatFields,
+        this.currentUser || {}
       );
-      return this.preChatFields.filter(field => {
-        if (isUserEmailAvailable && field.name === 'emailAddress') {
-          return false;
-        }
-        if (isUserPhoneNumberAvailable && field.name === 'phoneNumber') {
-          return false;
-        }
-        if (isUserNameAvailable && field.name === 'fullName') {
-          return false;
-        }
-        return true;
-      });
     },
     enabledPreChatFields() {
       return this.filteredPreChatFields
@@ -138,6 +131,19 @@ export default {
       });
       return contactAttributes;
     },
+  },
+  mounted() {
+    if (this.hasActiveCampaign) return;
+    const draft = sessionStorage.getItem(PRECHAT_MESSAGE_DRAFT_STORAGE_KEY);
+    if (draft) {
+      const trimmed = String(draft).trim();
+      sessionStorage.removeItem(PRECHAT_MESSAGE_DRAFT_STORAGE_KEY);
+      if (trimmed) {
+        this.homeDraftMessage = trimmed;
+        this.formValues = { ...this.formValues, message: trimmed };
+        this.messagePrefilledFromHome = true;
+      }
+    }
   },
   methods: {
     labelClass(input) {
@@ -232,7 +238,11 @@ export default {
       return {};
     },
     onSubmit() {
-      const { emailAddress, fullName, phoneNumber, message } = this.formValues;
+      const { emailAddress, fullName, phoneNumber } = this.formValues;
+      const message =
+        (this.messagePrefilledFromHome && this.homeDraftMessage) ||
+        this.formValues.message ||
+        '';
       this.$emit('submitPreChat', {
         fullName,
         phoneNumber,
@@ -299,7 +309,7 @@ export default {
       :has-error-in-phone-input="hasErrorInPhoneInput"
     />
     <FormKit
-      v-if="!hasActiveCampaign"
+      v-if="showPreChatMessageField"
       name="message"
       type="textarea"
       :label-class="context => `text-sm font-medium ${labelClass(context)}`"

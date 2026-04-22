@@ -59,4 +59,7 @@ module Events::Types
 
   # copilot events
   COPILOT_MESSAGE_CREATED = 'copilot.message.created'
+
+  # FourAY agent streaming (widget contact pubsub only)
+  FOUR_AY_REPLY_STREAM = 'four_ay.reply_stream'
 end

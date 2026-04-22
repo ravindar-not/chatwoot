@@ -1,5 +1,6 @@
 <script>
 import ChatMessage from 'widget/components/ChatMessage.vue';
+import AgentMessage from 'widget/components/AgentMessage.vue';
 import AgentTypingBubble from 'widget/components/AgentTypingBubble.vue';
 import DateSeparator from 'shared/components/DateSeparator.vue';
 import Spinner from 'shared/components/Spinner.vue';
@@ -11,6 +12,7 @@ export default {
   name: 'ConversationWrap',
   components: {
     ChatMessage,
+    AgentMessage,
     AgentTypingBubble,
     DateSeparator,
     Spinner,
@@ -40,11 +42,46 @@ export default {
       conversationSize: 'conversation/getConversationSize',
       isAgentTyping: 'conversation/getIsAgentTyping',
       conversationAttributes: 'conversationAttributes/getConversationParams',
+      fourAyStreamReply: 'conversation/getFourAyStreamReply',
     }),
+    showFourAyStreamBubble() {
+      const s = this.fourAyStreamReply;
+      if (!s?.active || !s.content) {
+        return false;
+      }
+      return String(s.conversationId) === String(this.conversationAttributes.id);
+    },
+    /** Same shape as persisted agent messages so +AgentMessage+ renders identical layout. */
+    fourAyStreamPlaceholderMessage() {
+      if (!this.showFourAyStreamBubble) return null;
+      const s = this.fourAyStreamReply;
+      const name =
+        window.chatwootWebChannel?.websiteName ||
+        this.$t('UNREAD_VIEW.BOT');
+      return {
+        id: `four-ay-stream-${s.streamId}`,
+        content: s.content,
+        message_type: MESSAGE_TYPE.OUTGOING,
+        content_type: '',
+        content_attributes: {},
+        showAvatar: true,
+        sender: {
+          name,
+          available_name: name,
+          type: 'user',
+          avatar_url: null,
+        },
+        attachments: [],
+        created_at: new Date().toISOString(),
+      };
+    },
     colorSchemeClass() {
       return `${this.darkMode === 'dark' ? 'dark-scheme' : 'light-scheme'}`;
     },
     showStatusIndicator() {
+      // While we are rendering streamed content, suppress the separate typing bubble
+      // to avoid duplicate "loading" rows.
+      if (this.fourAyStreamReply?.active) return false;
       const { status } = this.conversationAttributes;
       const isLastMessageIncoming =
         this.lastMessage.message_type === MESSAGE_TYPE.INCOMING;
@@ -58,6 +95,14 @@ export default {
   watch: {
     allMessagesLoaded() {
       this.previousScrollHeight = 0;
+    },
+    fourAyStreamReply: {
+      deep: true,
+      handler() {
+        if (!this.showFourAyStreamBubble) return;
+        // Measure after DOM updates; if the user scrolled up, stay put (ChatGPT-style).
+        this.scrollStreamToBottomIfPinned();
+      },
     },
   },
   mounted() {
@@ -75,6 +120,26 @@ export default {
   },
   methods: {
     ...mapActions('conversation', ['fetchOldConversations']),
+    /**
+     * Chat-style auto-follow: only true when the viewport is pinned to the newest content.
+     * Must be called after layout reflects current content (e.g. inside $nextTick).
+     */
+    isPinnedToBottom(container, thresholdPx = 140) {
+      if (!container) return true;
+      const gap =
+        container.scrollHeight - container.scrollTop - container.clientHeight;
+      return gap <= thresholdPx;
+    },
+    scrollStreamToBottomIfPinned() {
+      if (!this.showFourAyStreamBubble) return;
+      this.$nextTick(() => {
+        requestAnimationFrame(() => {
+          const el = this.$el;
+          if (!el || !this.isPinnedToBottom(el)) return;
+          el.scrollTop = el.scrollHeight;
+        });
+      });
+    },
     scrollToBottom() {
       const container = this.$el;
       container.scrollTop = container.scrollHeight - this.previousScrollHeight;
@@ -114,6 +179,12 @@ export default {
           v-for="message in groupedMessage.messages"
           :key="message.id"
           :message="message"
+        />
+      </div>
+      <div v-if="fourAyStreamPlaceholderMessage" class="messages-wrap">
+        <AgentMessage
+          :id="`cwmsg-${fourAyStreamPlaceholderMessage.id}`"
+          :message="fourAyStreamPlaceholderMessage"
         />
       </div>
       <AgentTypingBubble v-if="showStatusIndicator" />

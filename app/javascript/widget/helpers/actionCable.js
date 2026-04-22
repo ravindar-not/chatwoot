@@ -20,6 +20,7 @@ class ActionCableConnector extends BaseActionCableConnector {
     super(app, pubsubToken, '', WIDGET_PRESENCE_INTERVAL);
     this.events = {
       'message.created': this.onMessageCreated,
+      'four_ay.reply_stream': this.onFourAyReplyStream,
       'message.updated': this.onMessageUpdated,
       'conversation.typing_on': this.onTypingOn,
       'conversation.typing_off': this.onTypingOff,
@@ -53,9 +54,32 @@ class ActionCableConnector extends BaseActionCableConnector {
     this.app.$store.dispatch('conversationAttributes/update', data);
   };
 
+  onFourAyReplyStream = data => {
+    const activeId =
+      this.app.$store.getters['conversationAttributes/getConversationParams'].id;
+    if (!activeId || String(data.conversation_id) !== String(activeId)) {
+      return;
+    }
+    this.app.$store.commit('conversation/setFourAyStreamReply', {
+      conversation_id: data.conversation_id,
+      stream_id: data.stream_id,
+      content: data.content,
+    });
+  };
+
   onMessageCreated = data => {
     if (isMessageInActiveConversation(this.app.$store.getters, data)) {
       return;
+    }
+
+    const attrs = data.content_attributes || {};
+    const stream = this.app.$store.getters['conversation/getFourAyStreamReply'];
+    if (
+      stream?.active &&
+      attrs.four_ay_stream_id != null &&
+      String(attrs.four_ay_stream_id) === String(stream.streamId)
+    ) {
+      this.app.$store.commit('conversation/clearFourAyStreamReply');
     }
 
     this.app.$store
