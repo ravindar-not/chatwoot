@@ -22,9 +22,11 @@ class Integrations::FourAy::ResponseParser
 
       fragmented = extract_answer_json_string_value(concatenate_fouray_data_fragments(raw))
       standard = extract_reply_from_sse(raw)
-      candidates = [fragmented, standard].compact
-      best = candidates.max_by { |t| t.to_s.bytesize }
-      return best if best.present?
+      return fragmented if fragmented.present?
+      return standard if standard.present?
+
+      plain_text = extract_plain_text_from_sse(raw)
+      return plain_text if plain_text.present?
 
       # Never return the raw SSE string (would broadcast junk before +answer+ exists).
       nil
@@ -38,7 +40,9 @@ class Integrations::FourAy::ResponseParser
         next if payload.blank?
 
         parsed = JSON.parse(payload)
-        text = extract_reply(parsed)
+        next unless parsed.is_a?(Hash)
+
+        text = extract_text_from_hash(parsed.stringify_keys)
         last = text if text.present?
       rescue JSON::ParserError
         next
@@ -128,6 +132,33 @@ class Integrations::FourAy::ResponseParser
         pos += 1
       end
       buf.presence
+    end
+
+    # Fallback for streams that send plain text tokens (+data: Hello+, +data:  world+, ...)
+    # instead of JSON events/objects. Keep payload spaces intact.
+    def extract_plain_text_from_sse(raw)
+      pieces = []
+      raw.to_s.each_line do |line|
+        line = line.chomp
+        next unless line.lstrip.start_with?('data:')
+
+        payload = line.sub(/\A\s*data:\s?/, '')
+        next if payload == '[DONE]'
+        next if json_payload?(payload)
+
+        # Preserve explicit blank +data:+ lines as line breaks.
+        pieces << (payload.empty? ? "\n" : payload)
+      end
+
+      text = pieces.join
+      text.strip.presence ? text : nil
+    end
+
+    def json_payload?(payload)
+      parsed = JSON.parse(payload)
+      parsed.is_a?(Hash) || parsed.is_a?(Array)
+    rescue JSON::ParserError
+      false
     end
 
     def extract_text_from_hash(hash)
